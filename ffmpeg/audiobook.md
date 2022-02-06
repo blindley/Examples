@@ -46,5 +46,5 @@ Read file containing information about chapters, and move files into those direc
     # ...
 
     # make chapter directories and move corresponding files inside
-    ls | awk '/chap/{ print "mkdir " $1; d=$1; } /mp3/{ print "mv " $1 " " d; }' | sh
+    ls | awk '/chap/{ print "mkdir " $1; d=$1; } /mp3/{ print "mv " $1 " " d; }' input_file | sh
 
