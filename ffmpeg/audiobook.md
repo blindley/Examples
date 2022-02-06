@@ -2,20 +2,12 @@
 
 Concat a list of .mp3 files
 
-    # format list of mp3 files for ffmpeg processing:
-    #    file '1.mp3'
-    #    file '2.mp3'
-    #    file '3.mp3'
-    #    ...
-
-    ls *.mp3 | sed "s/\(.*\)/file '\1'/g" > file_list.txt
-
-    # concat files from list
-    ffmpeg -f concat -safe 0 -i file_list.txt -c copy output.mp3
+    ls *.mp3 | sed "s/.*/file '&'/" > concat_list.txt
+    ffmpeg -f concat -safe 0 -i concat_list.txt -c copy concat.mp3
 
 Detect silence intervals <= -30dB lasting >= 1 second.
 
-    ffmpeg -i input.mp3 -af silencedetect=n=-30dB:d=1 -f null - 2>&1 | \
+    ffmpeg -i concat.mp3 -af silencedetect=n=-30dB:d=1 -f null - 2>&1 | \
         grep 'silencedetect @' | sed 's/^[^]]*\] //' | paste -d " " - - | \
         sed 's/|//' > silence_intervals.txt
 
@@ -36,7 +28,23 @@ Capture split points into a comma separated bash variable:
 
     SPLITPOINTS=$(tr '\n' ',' < split_points.txt | sed 's/,$//')
 
-Split mp3 file based on split points in bash variable:
-
-    ffmpeg -v warning -i input.mp3  -c copy -map 0 -f segment \
+    ffmpeg -v warning -i concat.mp3  -c copy -map 0 -f segment \
         -segment_times "$SPLITPOINTS" "%02d.mp3"
+
+Read file containing information about chapters, and move files into those directories
+
+    # Input file should look like this:
+    #
+    # chap00/
+    # 00.mp3
+    # 01.mp3
+    #
+    # chap01/
+    # 02.mp3
+    # 03.mp3
+    # 04.mp3
+    # ...
+
+    # make chapter directories and move corresponding files inside
+    ls | awk '/chap/{ print "mkdir " $1; d=$1; } /mp3/{ print "mv " $1 " " d; }' | sh
+
